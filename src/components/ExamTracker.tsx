@@ -49,7 +49,7 @@ export const ExamTracker: React.FC = () => {
   const handleAddExam = () => {
     if (!form.subject || !form.date) return;
     const newExam: Exam = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       subject: form.subject,
       date: form.date,
       notes: form.notes,

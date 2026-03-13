@@ -27,7 +27,7 @@ export const StudyPlanner: React.FC = () => {
   const addTask = () => {
     const day = DAYS_OF_WEEK[tasks.length % 7];
     const newTask: Task = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       day,
       topic: 'Yeni Konu',
       duration: '1 saat',
