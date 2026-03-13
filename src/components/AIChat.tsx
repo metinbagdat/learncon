@@ -38,19 +38,10 @@ export const AIChat: React.FC = () => {
     // Add empty assistant message for streaming
     setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
 
-    // Build the full messages array with system context
-    // Claude API doesn't support system role in messages array directly in older versions
-    // We prepend the system context to the first user message
     const systemPrompt = SYSTEM_MESSAGES[language];
-    const apiMessages = newMessages.map((m, idx) => {
-      if (idx === 0 && m.role === 'user') {
-        return { role: 'user', content: `[System: ${systemPrompt}]\n\n${m.content}` };
-      }
-      return { role: m.role, content: m.content };
-    });
 
     callClaude(
-      apiMessages,
+      newMessages,
       (chunk) => {
         setMessages(prev => {
           const updated = [...prev];
@@ -74,7 +65,8 @@ export const AIChat: React.FC = () => {
           return updated;
         });
         setLoading(false);
-      }
+      },
+      systemPrompt
     );
   };
 

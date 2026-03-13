@@ -6,7 +6,8 @@ export async function callClaude(
   messages: { role: string; content: string }[],
   onChunk: OnChunk,
   onDone: OnDone,
-  onErr: OnErr
+  onErr: OnErr,
+  system?: string
 ): Promise<void> {
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY || '';
   
@@ -22,6 +23,14 @@ export async function callClaude(
   }
 
   try {
+    const body: Record<string, unknown> = {
+      model: 'claude-3-haiku-20240307',
+      max_tokens: 1024,
+      stream: true,
+      messages,
+    };
+    if (system) body.system = system;
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -29,12 +38,7 @@ export async function callClaude(
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
       },
-      body: JSON.stringify({
-        model: 'claude-3-haiku-20240307',
-        max_tokens: 1024,
-        stream: true,
-        messages,
-      }),
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
