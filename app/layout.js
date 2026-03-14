@@ -1,22 +1,13 @@
-import { ToastProvider } from '@/components/Toast'
-import { GlobalErrorSetup } from '@/components/GlobalErrorSetup'
-import { ErrorBoundary } from '@/components/ErrorBoundary'
-
 export const metadata = {
   title: 'LearnConnect',
-  description: 'Hata yönetimi sistemi',
+  description: 'TYT, AYT, LGS ve uluslararası sınavlar için AI destekli eğitim portalı',
 }
 
 export default function RootLayout({ children }) {
   return (
     <html lang="tr">
-      <body>
-        <ToastProvider>
-          <GlobalErrorSetup />
-          <ErrorBoundary name="Root">
-            {children}
-          </ErrorBoundary>
-        </ToastProvider>
+      <body style={{ margin: 0, padding: 0 }}>
+        {children}
       </body>
     </html>
   )
