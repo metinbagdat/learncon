@@ -1,7 +1,11 @@
-'use client'
 import { ToastProvider } from '@/components/Toast'
 import { GlobalErrorSetup } from '@/components/GlobalErrorSetup'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+
+export const metadata = {
+  title: 'LearnConnect',
+  description: 'Hata yönetimi sistemi',
+}
 
 export default function RootLayout({ children }) {
   return (
