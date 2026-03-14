@@ -432,15 +432,14 @@ function useClaude() {
   const call = useCallback(async (prompt, system) => {
     setLoading(true); setError(null); setResult("");
     try {
-      const body = { model:"claude-sonnet-4-20250514", max_tokens:1000,
-        messages:[{ role:"user", content:prompt }] };
+      const body = { messages:[{ role:"user", content:prompt }] };
       if (system) body.system = system;
-      const res = await fetch("https://api.anthropic.com/v1/messages",{
+      const res = await fetch("/api/claude",{
         method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)
       });
       if (!res.ok) {
         const e = await res.json().catch(()=>({}));
-        throw new Error(e.error?.message || `HTTP ${res.status}`);
+        throw new Error(e.error || `HTTP ${res.status}`);
       }
       const data = await res.json();
       const text = data.content?.map(b=>b.text||"").join("") || "";
@@ -455,13 +454,13 @@ function useClaude() {
   const callChat = useCallback(async (system, messages) => {
     setLoading(true); setError(null);
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages",{
+      const res = await fetch("/api/claude",{
         method:"POST", headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1000, system, messages })
+        body:JSON.stringify({ system, messages })
       });
       if (!res.ok) {
         const e = await res.json().catch(()=>({}));
-        throw new Error(e.error?.message || `HTTP ${res.status}`);
+        throw new Error(e.error || `HTTP ${res.status}`);
       }
       const data = await res.json();
       const text = data.content?.map(b=>b.text||"").join("") || "";
@@ -958,7 +957,7 @@ function CourseBrowser() {
                 {aiSuggest}
               </div>
             )}
-            <button className="enroll-btn">{ct.enroll}</button>
+            <EnrollButton course={selected} ct={ct}/>
             <button className="btn-ai" style={{width:"100%",justifyContent:"center",marginTop:"7px",background:th.elevated,color:th.ink,border:`1px solid ${th.border}`}} onClick={suggestNext} disabled={loading}>
               {loading?<Dots/>:ct.aiNext}
             </button>
@@ -966,6 +965,33 @@ function CourseBrowser() {
         )}
       </div>
     </div>
+  );
+}
+
+
+function EnrollButton({ course, ct }) {
+  const { authUser, setAuthModal, addToast, lang, th } = useApp();
+  const [enrolled, setEnrolled] = useState(()=>{
+    if (typeof window === 'undefined') return false;
+    const e = JSON.parse(localStorage.getItem('lc_enrollments')||'[]');
+    return e.includes(course?.id);
+  });
+
+  function handleEnroll() {
+    if (!authUser) { setAuthModal('register'); return; }
+    const e = JSON.parse(localStorage.getItem('lc_enrollments')||'[]');
+    if (!e.includes(course.id)) {
+      localStorage.setItem('lc_enrollments', JSON.stringify([...e, course.id]));
+      setEnrolled(true);
+      addToast(lang==="tr"?`${course.name} dersine kaydoldunuz! 🎉`:`Enrolled in ${course.name}! 🎉`);
+    }
+  }
+
+  return (
+    <button className="enroll-btn" onClick={handleEnroll}
+      style={{background: enrolled ? th.gold : undefined}}>
+      {enrolled ? (lang==="tr"?"✓ Kayıtlısınız":"✓ Enrolled") : ct.enroll}
+    </button>
   );
 }
 
@@ -1205,12 +1231,83 @@ function MCPDashboard() {
   );
 }
 
+
+// ── AUTH MODAL ────────────────────────────────────────────────
+function AuthModal({ mode, setMode, onSuccess, onClose, lang, th }) {
+  const [name,  setName]  = useState("");
+  const [email, setEmail] = useState("");
+  const [pass,  setPass]  = useState("");
+  const [err,   setErr]   = useState("");
+
+  function submit() {
+    setErr("");
+    if (!email.trim() || !pass.trim()) { setErr(lang==="tr"?"E-posta ve şifre gerekli.":"Email and password required."); return; }
+    if (mode==="register" && !name.trim()) { setErr(lang==="tr"?"Ad gerekli.":"Name required."); return; }
+    if (pass.length < 6) { setErr(lang==="tr"?"Şifre en az 6 karakter.":"Password must be 6+ chars."); return; }
+
+    const users = JSON.parse(localStorage.getItem('lc_users')||'[]');
+
+    if (mode==="register") {
+      if (users.find(u=>u.email===email)) { setErr(lang==="tr"?"Bu e-posta zaten kayıtlı.":"Email already registered."); return; }
+      const user = { id: Date.now(), name: name.trim(), email: email.trim(), createdAt: new Date().toISOString() };
+      localStorage.setItem('lc_users', JSON.stringify([...users, { ...user, pass }]));
+      localStorage.setItem('lc_user', JSON.stringify(user));
+      onSuccess(user);
+    } else {
+      const found = users.find(u=>u.email===email && u.pass===pass);
+      if (!found) { setErr(lang==="tr"?"E-posta veya şifre hatalı.":"Invalid email or password."); return; }
+      const user = { id: found.id, name: found.name, email: found.email };
+      localStorage.setItem('lc_user', JSON.stringify(user));
+      onSuccess(user);
+    }
+  }
+
+  const isReg = mode==="register";
+  return (
+    <div className="overlay" onClick={onClose}>
+      <div className="modal" onClick={e=>e.stopPropagation()} style={{maxWidth:380}}>
+        <div className="modal-title">{isReg?(lang==="tr"?"Ücretsiz Kayıt":"Sign Up Free"):(lang==="tr"?"Giriş Yap":"Sign In")}</div>
+        {isReg && (
+          <div className="form-group">
+            <label className="form-label">{lang==="tr"?"Ad Soyad":"Full Name"}</label>
+            <input className="form-input" value={name} onChange={e=>setName(e.target.value)} placeholder={lang==="tr"?"Adınız":"Your name"} onKeyDown={e=>e.key==="Enter"&&submit()}/>
+          </div>
+        )}
+        <div className="form-group">
+          <label className="form-label">E-posta</label>
+          <input className="form-input" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="ornek@email.com" onKeyDown={e=>e.key==="Enter"&&submit()}/>
+        </div>
+        <div className="form-group">
+          <label className="form-label">{lang==="tr"?"Şifre":"Password"}</label>
+          <input className="form-input" type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder={lang==="tr"?"En az 6 karakter":"At least 6 chars"} onKeyDown={e=>e.key==="Enter"&&submit()}/>
+        </div>
+        {err && <div style={{background:"#fef2f2",border:"1px solid #fca5a5",borderRadius:7,padding:"8px 12px",fontSize:13,color:"#dc2626",marginBottom:".6rem"}}>{err}</div>}
+        <div className="modal-btns">
+          <button className="btn-cancel" onClick={onClose}>{lang==="tr"?"İptal":"Cancel"}</button>
+          <button className="btn-save" onClick={submit}>{isReg?(lang==="tr"?"Kayıt Ol":"Sign Up"):(lang==="tr"?"Giriş":"Sign In")}</button>
+        </div>
+        <div style={{textAlign:"center",marginTop:".9rem",fontSize:".8rem",color:th.light}}>
+          {isReg
+            ? <>{lang==="tr"?"Zaten hesabın var mı?":"Already have an account?"} <button style={{background:"none",border:"none",color:th.accent,cursor:"pointer",fontWeight:600}} onClick={()=>setMode("login")}>{lang==="tr"?"Giriş Yap":"Sign In"}</button></>
+            : <>{lang==="tr"?"Hesabın yok mu?":"No account?"} <button style={{background:"none",border:"none",color:th.accent,cursor:"pointer",fontWeight:600}} onClick={()=>setMode("register")}>{lang==="tr"?"Kayıt Ol":"Sign Up"}</button></>
+          }
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── ROOT APP ──────────────────────────────────────────────────
 function App() {
   const [tab, setTab]   = useState("home");
   const [dark, setDark] = useState(false);
   const [lang, setLang] = useState("tr");
-  const [toasts, setToasts] = useState([]);
+  const [toasts,    setToasts]    = useState([]);
+  const [authModal, setAuthModal] = useState(null); // null | 'login' | 'register'
+  const [authUser,  setAuthUser]  = useState(()=>{
+    if (typeof window === 'undefined') return null;
+    try { return JSON.parse(localStorage.getItem('lc_user') || 'null'); } catch { return null; }
+  });
 
   const theme = THEMES[dark?"dark":"light"];
 
@@ -1229,7 +1326,8 @@ function App() {
     t: TR[lang],
     th: theme.th,
     addToast,
-  }),[lang,dark,tab,setTab,addToast,theme]);
+    authUser, setAuthUser, setAuthModal,
+  }),[lang,dark,tab,setTab,addToast,theme,authUser,setAuthUser,setAuthModal]);
 
   const t = TR[lang].nav;
   const TABS = [
@@ -1261,7 +1359,15 @@ function App() {
             <button className="icon-btn" onClick={()=>setDark(d=>!d)} title="Tema / Theme">
               {dark?"☀️":"🌙"}
             </button>
-            <button className="cta-btn">{t.signup}</button>
+            {authUser
+              ? <button className="cta-btn" onClick={()=>{
+                  if(window.confirm(lang==="tr"?`${authUser.name} olarak çıkış yapılsın mı?`:`Sign out as ${authUser.name}?`)){
+                    localStorage.removeItem('lc_user'); setAuthUser(null);
+                    addToast(lang==="tr"?"Çıkış yapıldı.":"Signed out.");
+                  }
+                }}>👤 {authUser.name}</button>
+              : <button className="cta-btn" onClick={()=>setAuthModal('register')}>{t.signup}</button>
+            }
           </div>
         </nav>
 
@@ -1272,6 +1378,16 @@ function App() {
         {tab==="chat"    && <AIChat/>}
         {tab==="mcp"     && <MCPDashboard/>}
 
+        {/* Auth Modal */}
+        {authModal && (
+          <AuthModal
+            mode={authModal}
+            setMode={setAuthModal}
+            onSuccess={(user)=>{ setAuthUser(user); setAuthModal(null); addToast(lang==="tr"?`Hoş geldin, ${user.name}!`:`Welcome, ${user.name}!`); }}
+            onClose={()=>setAuthModal(null)}
+            lang={lang} th={theme.th}
+          />
+        )}
         {/* ✅ MobileNav — küçük ekranda görünür */}
         <MobileNav/>
 
