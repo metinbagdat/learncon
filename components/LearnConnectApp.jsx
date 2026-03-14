@@ -146,7 +146,7 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);background:var(--bg);tran
 .ntab{padding:5px 13px;border-radius:20px;border:none;background:transparent;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:500;color:var(--lt);transition:all .2s;white-space:nowrap}
 .ntab:hover{background:var(--hl);color:var(--accent)}
 .ntab.on{background:var(--accent);color:#fff}
-.nav-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.nav-right{display:flex;align-items:center;gap:6px;flex-shrink:0;min-width:160px;justify-content:flex-end}
 .icon-btn{width:32px;height:32px;border-radius:7px;background:var(--card);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.9rem;color:var(--ink);transition:all .2s}
 .icon-btn:hover{border-color:var(--accent);color:var(--accent)}
 .cta-btn{padding:7px 16px;background:var(--ink);color:var(--bg);border:none;border-radius:20px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap}
