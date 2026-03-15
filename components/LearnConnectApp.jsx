@@ -764,6 +764,7 @@ function StudyPlanner() {
   const CAT_CLS = {math:"cat-math",tr:"cat-tr",sci:"cat-sci",test:"cat-test",social:"cat-social",review:"cat-review"};
 
   async function generate() {
+    await new Promise(r => setTimeout(r, 0));
     const prompt = `You are an expert Turkish exam (TYT/AYT/LGS) coach. Respond in ${lang==="tr"?"Turkish":"English"}.
 Student: exam=${form.exam}, ${form.hours}h/day, weak: ${form.weak}, date: ${form.date||"June 2025"}.
 Give 3 short paragraphs: 1) assessment 2) specific weekly strategy 3) motivational insight. Under 160 words.`;
