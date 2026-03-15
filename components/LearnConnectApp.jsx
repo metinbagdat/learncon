@@ -1282,7 +1282,18 @@ function AuthModal({ mode, setMode, onSuccess, onClose, lang, th }) {
         </div>
         <div className="form-group">
           <label className="form-label">{lang==="tr"?"Şifre":"Password"}</label>
-          <input className="form-input" type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder={lang==="tr"?"En az 6 karakter":"At least 6 chars"} onKeyDown={e=>e.key==="Enter"&&submit()}/>
+          <div style={{position:"relative"}}>
+            <input className="form-input" id="lc-pass" type="password" value={pass}
+              onChange={e=>setPass(e.target.value)}
+              placeholder={lang==="tr"?"En az 6 karakter":"At least 6 chars"}
+              onKeyDown={e=>e.key==="Enter"&&submit()}
+              style={{width:"100%",paddingRight:"2.5rem"}}/>
+            <button type="button"
+              onClick={()=>{const i=document.getElementById('lc-pass');i.type=i.type==='password'?'text':'password'}}
+              style={{position:"absolute",right:"8px",top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",color:"#64748b",fontSize:"14px"}}>
+              👁
+            </button>
+          </div>                 
         </div>
         {err && <div style={{background:"#fef2f2",border:"1px solid #fca5a5",borderRadius:7,padding:"8px 12px",fontSize:13,color:"#dc2626",marginBottom:".6rem"}}>{err}</div>}
         <div className="modal-btns">
