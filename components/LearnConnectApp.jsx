@@ -1255,6 +1255,8 @@ function AuthModal({ mode, setMode, onSuccess, onClose, lang, th }) {
       localStorage.setItem('lc_user', JSON.stringify(user));
       onSuccess(user);
     } else {
+      console.log('Kayıtlı kullanıcılar:', users);
+      console.log('Girilen:', email, pass);      
       const found = users.find(u=>u.email===email && u.pass===pass);
       if (!found) { setErr(lang==="tr"?"E-posta veya şifre hatalı.":"Invalid email or password."); return; }
       const user = { id: found.id, name: found.name, email: found.email };
